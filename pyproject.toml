@@ -15,6 +15,7 @@ dependencies = [
     "scipy==1.18.1",
     "statsmodels==0.15.0",
     "scikit-learn==1.9.1",
+    "markdown==3.10.3",  # report/build_pdf.py (보고서 md → HTML)
 ]
 
 [tool.uv]

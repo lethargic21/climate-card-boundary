@@ -11,6 +11,12 @@
   python src/01_fetch_ridership.py hourly --start 202301 --end 202608
   python src/01_fetch_ridership.py daily --start 20260301 --end 20260921
   python src/01_fetch_ridership.py files --start 202301 --end 202608   # 데이터셋 월별 CSV
+  python src/01_fetch_ridership.py files --start 2022 --end 2022       # 연도 통합 CSV(4자리)
+  python src/01_fetch_ridership.py bus --start 202301 --end 202512     # 버스 노선·정류장별 월×시간대
+  python src/01_fetch_ridership.py geo                                 # 역·버스정류장 좌표
+
+버스(CardBusTimeNew, OA-12913)는 서울 면허 버스의 노선×정류장 월 승하차로, 서울 밖 정류장도 들어 있다.
+월마다 약 4만 행이라 원본 행을 그대로 parquet로 저장한다(형식만 바꿈, 값·열은 원본 그대로).
 
 원본은 data/raw/ 아래에 받은 그대로 저장하고, 이미 있는 파일은 건너뛴다(--force로 덮어씀).
 """
@@ -29,9 +35,12 @@ from common import DATA_RAW, OUT_TABLES, load_key, seoul_api, seoul_api_all
 
 DAILY = "CardSubwayStatsNew"
 HOURLY = "CardSubwayTime"
+BUS = "CardBusTimeNew"
 DAILY_DIR = DATA_RAW / "seoul_daily_api"
 HOURLY_DIR = DATA_RAW / "seoul_hourly_api"
 CSV_DIR = DATA_RAW / "seoul_daily_csv"
+BUS_DIR = DATA_RAW / "seoul_bus_hourly_api"
+GEO_DIR = DATA_RAW / "seoul_geo_api"
 DATASET_PAGE = "https://data.seoul.go.kr/dataList/OA-12914/S/1/datasetView.do"
 FILE_DOWNLOAD = "https://datafile.seoul.go.kr/bigfile/iot/inf/nio_download.do?&useCache=false"
 BROWSER_UA = {"User-Agent": "Mozilla/5.0"}
@@ -142,10 +151,13 @@ def fetch_daily(start: str, end: str, key: str, force: bool) -> None:
 
 
 def fetch_files(start: str, end: str, force: bool) -> None:
-    """데이터셋 페이지의 파일 목록에서 CARD_SUBWAY_MONTH_YYYYMM.csv의 seq를 찾아 내려받는다."""
+    """데이터셋 페이지의 파일 목록에서 CARD_SUBWAY_MONTH_{YYYYMM|YYYY}.csv의 seq를 찾아 내려받는다.
+    4자리(연도)를 주면 연도 통합 파일(2015~2022 제공)을 받는다."""
     html = requests.get(DATASET_PAGE, headers=BROWSER_UA, timeout=60).text
-    seqs = dict(re.findall(r'title="(CARD_SUBWAY_MONTH_\d{6}\.csv)" onclick="javascript:downloadFile\(\'(\d+)\'\)', html))
-    for ym in _months(start, end):
+    seqs = dict(re.findall(
+        r'title="(CARD_SUBWAY_MONTH_\d{4}(?:\d{2})?\.csv)" onclick="javascript:downloadFile\(\'(\d+)\'\)', html))
+    periods = [str(y) for y in range(int(start), int(end) + 1)] if len(start) == 4 else _months(start, end)
+    for ym in periods:
         name = f"CARD_SUBWAY_MONTH_{ym}.csv"
         path = CSV_DIR / name
         if path.exists() and not force:
@@ -163,11 +175,35 @@ def fetch_files(start: str, end: str, force: bool) -> None:
         print(f"{name}: {len(resp.content) / 1e6:.2f}MB")
 
 
+def fetch_bus(start: str, end: str, key: str, force: bool) -> None:
+    for ym in _months(start, end):
+        path = BUS_DIR / f"{BUS}_{ym}.parquet"
+        if path.exists() and not force:
+            continue
+        rows = seoul_api_all(BUS, ym, key=key)
+        if not rows:
+            print(f"버스 {ym}: 데이터 없음")
+            continue
+        BUS_DIR.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(rows).to_parquet(path, index=False)
+        print(f"버스 {ym}: {len(rows)}행", flush=True)
+
+
+def fetch_geo(key: str) -> None:
+    """역 좌표(subwayStationMaster)와 서울 버스정류장 좌표(busStopLocationXyInfo)."""
+    GEO_DIR.mkdir(parents=True, exist_ok=True)
+    for svc in ("subwayStationMaster", "busStopLocationXyInfo"):
+        rows = seoul_api_all(svc, key=key)
+        _save(rows, GEO_DIR / f"{svc}.json")
+        print(f"{svc}: {len(rows)}행")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("probe", help="API 제공 기간·노선 커버리지 점검")
-    for name, fmt in [("hourly", "YYYYMM"), ("daily", "YYYYMMDD"), ("files", "YYYYMM")]:
+    sub.add_parser("geo", help="역·버스정류장 좌표")
+    for name, fmt in [("hourly", "YYYYMM"), ("daily", "YYYYMMDD"), ("files", "YYYYMM 또는 YYYY"), ("bus", "YYYYMM")]:
         p = sub.add_parser(name)
         p.add_argument("--start", required=True, help=fmt)
         p.add_argument("--end", required=True, help=fmt)
@@ -180,8 +216,12 @@ def main() -> None:
     key = load_key("SEOUL_API_KEY")
     if args.cmd == "probe":
         probe(key)
+    elif args.cmd == "geo":
+        fetch_geo(key)
     elif args.cmd == "hourly":
         fetch_hourly(args.start, args.end, key, args.force)
+    elif args.cmd == "bus":
+        fetch_bus(args.start, args.end, key, args.force)
     else:
         fetch_daily(args.start, args.end, key, args.force)
 

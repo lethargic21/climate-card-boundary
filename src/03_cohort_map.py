@@ -12,6 +12,8 @@
 
 제외 코드 (;로 연결, 공란 = 주 추정 포함)
   boundary_in / boundary_out  처리 경계의 안쪽 첫 역 / 바깥 1~2역 (흡수 효과 절에서 따로 사용)
+  boundary_ring2              서울 경계 바깥 1~2역 다음의 두 역(2차 링). 경계 이탈이 −1.7%로 번져 주 대조군에서 뺀다
+                              (2026-09-25 사용자 결정, 이전 기준은 강건성 'with_ring2')
   c1_outside_seoul            서울 밖이지만 C1부터 적용된 역(8호선 성남·7호선 광명/장암·3호선 지축)
   gtx / new_station / line_opening  분석기간 중 개통·신설 영향 (line_openings.csv)
   mixed_cohort                복합역 안에서 노선별 처리 시점이 다름
@@ -35,7 +37,7 @@ import pandas as pd
 
 from common import DATA_RAW, DATA_REFERENCE, normalize_station
 
-ANALYSIS_START, ANALYSIS_END = "202301", "202608"
+ANALYSIS_START, ANALYSIS_END = "202201", "202608"  # 역 목록 기간(2022는 사전추세 검정용)
 SEASON_REF = ("202205", "202212")  # 행락형 판정 기준기간
 TINY_MONTHLY_ON = 3000
 LEISURE_QUANTILE = 0.95
@@ -136,6 +138,8 @@ BOUNDARY_OUT = {"망월사", "회룡", "갈매", "별내", "도농", "양정", "
                 "선바위", "경마공원", "석수", "관악", "광명", "역곡", "소사", "계양", "검암", "원종",
                 "부천종합운동장", "한국항공대", "강매", "삼송", "원흥", "야당", "운정", "인덕원", "평촌",
                 "죽전", "보정", "삼동", "경기광주"}
+# 끝내 미적용인 서울 경계의 바깥 1~2역 다음 두 역(노선 순서)
+BOUNDARY_RING2 = {"의정부", "가능", "퇴계원", "사릉", "덕소", "도심", "안양", "명학", "부천", "중동", "청라국제도시"}
 OPENING = {"수서": "gtx", "구성": "gtx", "성남": "gtx;new_station", "서울역": "gtx", "연신내": "gtx",
            "대곡": "gtx", "암사역사공원": "new_station", "암사": "line_opening", "능곡": "line_opening",
            "원종": "new_station", "부천종합운동장": "new_station", "청산": "new_station",
@@ -247,6 +251,7 @@ def assign(rows: pd.DataFrame) -> pd.DataFrame:
         out = ["data_artifact"] if r.artifact else []
         c = r.complex
         out += ["boundary_in"] * (c in BOUNDARY_IN) + ["boundary_out"] * (c in BOUNDARY_OUT)
+        out += ["boundary_ring2"] * (c in BOUNDARY_RING2)
         out += ["c1_outside_seoul"] * (c in c1_out)
         out += OPENING[c].split(";") if c in OPENING else []
         out += ["alight_only"] * (c in ALIGHT_ONLY)

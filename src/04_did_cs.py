@@ -50,7 +50,7 @@ class Spec:
     freq: str = "week"                   # week | month
     base: str = "seasonal"               # seasonal | universal
     control: str = "never"               # never | notyet
-    controls: str = "main"               # main(통근권) | full(행락형 포함)
+    controls: str = "main"               # main(통근권) | full(+행락형) | with_ring2(+경계 2차 링, 이전 기준)
     start: str | None = None             # 추정 표본 시작(예: '2022-01-01')
     outcome: str = "on"                  # 주: on | work | rest · 월: on | peak | offpeak
     cohorts: tuple = TREATED_COHORTS
@@ -64,8 +64,6 @@ class Spec:
 
 
 HOLIDAY_MONTHS = (1, 2, 9, 10)  # 설(1~2월)·추석(9~10월)이 해마다 다른 달에 든다 — 월 자료 전년 동기 비교를 어긋나게 함
-# 서울 경계 바깥 1~2역 다음의 두 역 — 경계 흡수가 약하게 미칠 수 있는 대조 역(06_heterogeneity.py 거리 기울기)
-RING2 = ("의정부", "가능", "퇴계원", "사릉", "덕소", "도심", "안양", "명학", "부천", "중동", "청라국제도시")
 
 
 def aprime(name: str, **kw) -> Spec:
@@ -84,7 +82,7 @@ def load_long(freq: str, outcome: str) -> pd.DataFrame:
     """역 × 기간 긴 표에 y(log 결과변수)와 period를 붙인다."""
     if freq == "week":
         p = pd.read_parquet(DATA_PROCESSED / "panel_week.parquet")
-        num = {"on": p.on, "work": p.on_work / p.n_work, "rest": p.on_rest / p.n_rest}[outcome]
+        num = {"on": p.on, "off": p.off, "work": p.on_work / p.n_work, "rest": p.on_rest / p.n_rest}[outcome]
         p["y"] = np.log(num.where(num > 0)).where(~p.holiday_week)
         p["period"] = p.week
     else:
@@ -98,6 +96,11 @@ def load_long(freq: str, outcome: str) -> pd.DataFrame:
 def station_strata(kind: str, units: pd.DataFrame) -> pd.Series:
     """사전기간(2023) 시간대 프로필로 정한 역 유형. 경계값은 사양과 무관하게
     C1·통근권 대조 주 표본 역으로 고정한다."""
+    if kind == "cluster":  # 06_heterogeneity.py의 역 유형 군집(2023 프로필 k-means)
+        path = DATA_PROCESSED / "station_types_2023.parquet"
+        if not path.exists():
+            raise FileNotFoundError(f"{path.name} 없음 — 06_heterogeneity.py를 먼저 실행")
+        return pd.read_parquet(path).set_index("complex")["type"]
     prof = pd.read_parquet(DATA_PROCESSED / "station_profile_2023.parquet").set_index("complex")
     if kind != "am_quartile":
         raise ValueError(kind)
@@ -116,7 +119,7 @@ def select_units(p: pd.DataFrame, spec: Spec) -> pd.DataFrame:
     treated = u.cohort.isin(spec.cohorts) & (reason == "")
     if spec.c4_units is not None:
         treated &= (u.cohort != "C4") | u.index.isin(spec.c4_units)
-    ok_ctrl = {"main": [""], "full": ["", "leisure"]}[spec.controls]
+    ok_ctrl = {"main": [""], "full": ["", "leisure"], "with_ring2": ["", "boundary_ring2"]}[spec.controls]
     control = (u.cohort == "NT") & reason.isin(ok_ctrl) & ~u.index.isin(spec.drop_controls)
     strata = station_strata(spec.strata, u) if spec.strata else None
     u = u[treated | control].copy()
@@ -356,23 +359,26 @@ def covid_baseline() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def honest_rm(res: dict, benchmarks: dict[str, float | None]) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """C1에 대한 Δ^RM(M̄) 민감도. benchmarks: 이름 → 고정 D(연간), None이면 사전 칸 평균의 |값|을
-    부트스트랩과 함께 쓴다. 반환: (M̄ 격자 표, 붕괴점 표)."""
+def honest_rm(res: dict, benchmarks: dict[str, float | str]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """C1에 대한 Δ^RM 민감도. benchmarks: 이름 → 고정 D(연간, float) 또는 날짜 문자열 —
+    그 날짜 이후의 사전 칸(k=−1, 기준 연도 한 해 전) 평균의 |값|을 부트스트랩과 함께 D로 쓴다.
+    반환: (M 격자 표, 붕괴점 표)."""
     agg, G = res["agg"], res["G"]
     c = agg.cells
     g1 = next(g for g, name in G.attrs["cohort_names"].items() if name == "C1")
     sel = (c.g == g1).to_numpy()
     k = c.k.to_numpy()
-    pre_est, _, pre_draws = agg.estimate(sel & (k == -1), by_cohort_size=False)
+    t_date = pd.DatetimeIndex(res["labels"].reindex(c.t).to_numpy())
     targets = {f"{kk}년차": sel & (k == kk) for kk in (1, 2, 3)}
     targets["적용 후 전체"] = sel & (k >= 1)
     rows, breaks = [], []
-    for bname, fixed in benchmarks.items():
-        if fixed is None:
+    for bname, bench in benchmarks.items():
+        if isinstance(bench, str):
+            pre_est, _, pre_draws = agg.estimate(sel & (k == -1) & (t_date >= pd.Timestamp(bench)),
+                                                 by_cohort_size=False)
             D, D_draws = abs(pre_est), np.abs(pre_est + pre_draws)
         else:
-            D, D_draws = fixed, np.full(B_BOOT, fixed)
+            D, D_draws = bench, np.full(B_BOOT, bench)
         for tname, mask in targets.items():
             est, se, draws = agg.estimate(mask, by_cohort_size=False)
             k_eff = float(k[mask].mean())
@@ -404,7 +410,7 @@ SPECS = [
            drop_months=HOLIDAY_MONTHS),                               # 설·추석 달 제외(해마다 달이 바뀜)
     aprime("Aprime_week_fullctrl", controls="full"),                  # 전체 대조군(행락형 포함)
     aprime("Aprime_week_notyet", control="notyet"),                   # not-yet-treated 포함
-    aprime("Aprime_week_noring2", drop_controls=RING2),               # 경계 2차 링을 대조에서 제외
+    aprime("Aprime_week_withring2", controls="with_ring2"),          # 이전 기준: 경계 2차 링을 대조에 포함
     Spec("C6_aux_week", cohorts=("C6",)),                             # 보조: 하남(수요 정착 추세)
     Spec("C4_gwacheon_case", cohorts=("C4",), c4_units=GWACHEON),     # 사례: 과천역 1곳(SE 무효)
     Spec("uncond_week"),                                              # 비교용: 조건 없는 원 사양
@@ -443,16 +449,18 @@ def main() -> None:
 
     a = base[base.group.str.startswith("A′")].set_index("year").gap_vs_2019
     structural = abs(a["2023"]) / 4  # 2019→2023 4년간 구조 변화를 연 단위로
-    benchmarks = {"2022→2023 사전 칸 평균(부트스트랩)": None, "2019→2023 구조 추세(연환산)": structural}
-    grid, breaks = honest_rm(results["Aprime_month_2022"], benchmarks)
-    grid.to_csv(OUT_TABLES / "honest_rm.csv", index=False, encoding="utf-8-sig")
-    breaks.to_csv(OUT_TABLES / "honest_rm_breakdown.csv", index=False, encoding="utf-8-sig")
-    print("\n=== HonestDiD Δ^RM(M̄), C1 (월 A′ 사양) ===")
-    show = grid[grid.target.isin(["1년차", "적용 후 전체"])].copy()
-    for col in ["D_annual", "est", "id_lo", "id_hi", "ci_lo", "ci_hi"]:
-        show[col] = (100 * show[col]).round(2)
-    print(show.drop(columns=["se", "k_mean"]).to_string(index=False))
-    print(breaks.assign(est=(100 * breaks.est).round(2)).to_string(index=False))
+    benchmarks = {"2022→2023 사전 추세(2022 전체)": "2022-01-01",
+                  "2022→2023 사전 추세(거리두기 해제 뒤 2022-05~)": "2022-05-01",
+                  "2019→2023 구조 추세(연환산)": structural}
+    for spec_name, suffix in (("Aprime_week", ""), ("Aprime_month_2022", "_month")):
+        grid, breaks = honest_rm(results[spec_name], benchmarks)
+        grid.to_csv(OUT_TABLES / f"honest_rm{suffix}.csv", index=False, encoding="utf-8-sig")
+        breaks.to_csv(OUT_TABLES / f"honest_rm{suffix}_breakdown.csv", index=False, encoding="utf-8-sig")
+        print(f"\n=== HonestDiD 상대적 크기 제약, C1 ({spec_name}) ===")
+        show = grid[grid.target.isin(["1년차", "2년차", "적용 후 전체"]) & grid.Mbar.isin([0, 1, 2])].copy()
+        for col in ["D_annual", "est", "id_lo", "id_hi", "ci_lo", "ci_hi"]:
+            show[col] = (100 * show[col]).round(2)
+        print(show.drop(columns=["se", "k_mean"]).to_string(index=False))
 
 
 if __name__ == "__main__":
