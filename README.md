@@ -40,14 +40,15 @@ uv run python src/01_fetch_ridership.py files --start 202301 --end 202608  # 일
 uv run python src/01_fetch_ridership.py daily --start 20260901 --end 20260921
 uv run python src/03_cohort_map.py                                     # data/reference/cohort_map.csv
 uv run python src/02_build_panel.py                                    # 역 × 주·월 패널
-uv run python src/04_did_cs.py                                         # CS-DiD
+uv run python src/04_did_cs.py                                         # CS-DiD·2019 진단·HonestDiD
 uv run python src/05_event_study.py                                    # event-study 그림
+uv run python src/06_heterogeneity.py                                  # 시간대·요일, 경계 흡수
 ```
 
 작업 폴더가 OneDrive 같은 동기화 폴더 안이면 `UV_PROJECT_ENVIRONMENT`로 환경을 폴더 밖에 두세요.
 
 일별 자료는 API가 최근 약 7개월만 보관하므로 과거분은 데이터셋 파일로 받습니다.
-`06`~`09` 스크립트는 작업 중입니다.
+`08`(탄소)·`09`(그림) 스크립트는 작업 중입니다.
 
 ## 구조
 

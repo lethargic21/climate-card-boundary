@@ -6,8 +6,9 @@
 - data/raw/seoul_hourly_api/*.json                        월×시간대 (2022-01~)
 - data/reference/cohort_map.csv
 출력
-- data/processed/panel_week.parquet   complex × 주(토~금): on, off, n_days, holiday_week + 코호트 정보
-- data/processed/panel_month.parquet  complex × 월: on + 코호트 정보
+- data/processed/panel_week.parquet   complex × 주(토~금): on, off, on_work/n_work(평일), on_rest/n_rest(휴일),
+                                      holiday_week + 코호트 정보
+- data/processed/panel_month.parquet  complex × 월: on, on_peak(07~09시·18~20시), on_offpeak + 코호트 정보
 - data/processed/station_profile_2023.parquet  complex별 2023년(사전기간) 시간대별 승차 비중 — 역 유형 분류용
 
 규칙
@@ -15,6 +16,7 @@
 - 역명 정규화는 common.normalize_station, 복합역·코호트·제외 사유는 cohort_map.csv를 따른다.
 - data_artifact 행은 합산하지 않는다. 월×시간대 원본의 중복 적재 행(2026-03·07)은 제거한다.
 - holiday_week: 설·추석 연휴가 낀 주 — 추정에서 뺀다.
+- 평일 = 공휴일이 아닌 월~금, 휴일 = 토·일·공휴일(PUBLIC_HOLIDAYS).
 """
 from __future__ import annotations
 
@@ -33,6 +35,22 @@ MAJOR_HOLIDAYS = [
     ("2025-01-25", "2025-01-30"), ("2025-10-03", "2025-10-09"),
     ("2026-02-14", "2026-02-18"), ("2026-09-24", "2026-09-26"),
 ]
+# 관공서 공휴일(대체·임시공휴일·선거일 포함) — 지식 기반, STATUS.md 가정 참조. 평일/휴일 구분용
+PUBLIC_HOLIDAYS = pd.to_datetime([
+    "2023-01-01", "2023-01-21", "2023-01-22", "2023-01-23", "2023-01-24", "2023-03-01", "2023-05-05",
+    "2023-05-27", "2023-05-29", "2023-06-06", "2023-08-15", "2023-09-28", "2023-09-29", "2023-09-30",
+    "2023-10-02", "2023-10-03", "2023-10-09", "2023-12-25",
+    "2024-01-01", "2024-02-09", "2024-02-10", "2024-02-11", "2024-02-12", "2024-03-01", "2024-04-10",
+    "2024-05-05", "2024-05-06", "2024-05-15", "2024-06-06", "2024-08-15", "2024-09-16", "2024-09-17",
+    "2024-09-18", "2024-10-01", "2024-10-03", "2024-10-09", "2024-12-25",
+    "2025-01-01", "2025-01-27", "2025-01-28", "2025-01-29", "2025-01-30", "2025-03-01", "2025-03-03",
+    "2025-05-05", "2025-05-06", "2025-06-03", "2025-06-06", "2025-08-15", "2025-10-03", "2025-10-05",
+    "2025-10-06", "2025-10-07", "2025-10-08", "2025-10-09", "2025-12-25",
+    "2026-01-01", "2026-02-16", "2026-02-17", "2026-02-18", "2026-03-01", "2026-03-02", "2026-05-05",
+    "2026-05-24", "2026-05-25", "2026-06-03", "2026-06-06", "2026-08-15", "2026-08-17",
+    "2026-09-24", "2026-09-25", "2026-09-26",
+])
+PEAK_HOURS = (7, 8, 18, 19)  # 07~09시, 18~20시 승차
 
 
 def read_daily_csv() -> pd.DataFrame:
@@ -96,8 +114,13 @@ def build_week(daily: pd.DataFrame, cmap: pd.DataFrame) -> pd.DataFrame:
     per_day = df.groupby(["complex", "date"])[["on", "off"]].sum().reset_index()
     # 토요일(weekday 5) 시작 주
     per_day["week"] = per_day.date - pd.to_timedelta((per_day.date.dt.weekday - 5) % 7, unit="D")
-    week = per_day.groupby(["complex", "week"]).agg(on=("on", "sum"), off=("off", "sum"),
-                                                     n_days=("date", "nunique")).reset_index()
+    rest = (per_day.date.dt.weekday >= 5) | per_day.date.isin(PUBLIC_HOLIDAYS)
+    per_day["on_work"], per_day["on_rest"] = per_day.on.where(~rest, 0), per_day.on.where(rest, 0)
+    per_day["n_work"], per_day["n_rest"] = (~rest).astype(int), rest.astype(int)
+    week = per_day.groupby(["complex", "week"]).agg(
+        on=("on", "sum"), off=("off", "sum"), n_days=("date", "nunique"),
+        on_work=("on_work", "sum"), n_work=("n_work", "sum"),
+        on_rest=("on_rest", "sum"), n_rest=("n_rest", "sum")).reset_index()
     week = week[week.n_days == 7].drop(columns="n_days")
     hol = pd.concat([pd.Series(pd.date_range(a, b)) for a, b in MAJOR_HOLIDAYS])
     hol_weeks = set(hol - pd.to_timedelta((hol.dt.weekday - 5) % 7, unit="D"))
@@ -129,8 +152,10 @@ def build_profile(hourly: pd.DataFrame, on_cols: list[str]) -> pd.DataFrame:
 
 
 def build_month(hourly: pd.DataFrame, cmap: pd.DataFrame) -> pd.DataFrame:
-    # cohort_map(2023~ 기준)에 없는 2022년 역명은 complex가 비어 groupby에서 빠진다
-    month = hourly.groupby(["complex", "USE_MM"]).on.sum().reset_index()
+    # cohort_map(2023~ 기준)에 없는 과거 역명은 complex가 비어 groupby에서 빠진다
+    hourly = hourly.assign(on_peak=hourly[[f"HR_{h}_GET_ON_NOPE" for h in PEAK_HOURS]].sum(axis=1))
+    month = hourly.groupby(["complex", "USE_MM"])[["on", "on_peak"]].sum().reset_index()
+    month["on_offpeak"] = month.on - month.on_peak
     month["month"] = pd.to_datetime(month.USE_MM, format="%Y%m")
     month["days"] = month.month.dt.days_in_month
     month = month.drop(columns="USE_MM")

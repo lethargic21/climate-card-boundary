@@ -1,8 +1,9 @@
-"""Event-study 그림 — 코호트별 사전추세 진단.
+"""Event-study 그림.
 
-C1은 월 자료(2022 포함, 전년 동기 대비)로, C4·C5·C6은 주 자료(4주 묶음)로 그린다.
+1) event_study_main.png  주 사양 A′: C1(월, 2022 사전 포함)과 C5(주, 4주 묶음)
+2) event_study_by_cohort.png  조건 없는 원 사양의 코호트별 사전추세 진단(기록용)
 처리 직전 한 주기(기준 연도)는 정의상 0이라 점을 찍지 않고 음영으로만 표시한다.
-출력 outputs/figures/event_study_by_cohort.png, outputs/tables/event_study_by_cohort.csv(그림 값)
+그림 값은 outputs/tables/event_study_*.csv
 """
 from __future__ import annotations
 
@@ -69,32 +70,63 @@ def draw(ax, ev: pd.DataFrame, title: str, freq: str) -> None:
     ax.spines["bottom"].set_color(BASELINE)
 
 
-def main() -> None:
-    plt.rcParams.update({"font.family": "NanumGothic", "axes.unicode_minus": False})
-    month = cohort_events(did.Spec("month_seasonal_2022", freq="month"), width=1)
-    week = cohort_events(did.Spec("week_seasonal"), width=4)
-    ev = pd.concat([month[month.cohort == "C1"], week[week.cohort != "C1"]], ignore_index=True)
-    OUT_TABLES.mkdir(parents=True, exist_ok=True)
-    ev.to_csv(OUT_TABLES / "event_study_by_cohort.csv", index=False, encoding="utf-8-sig")
+def mark_kpass(ax) -> None:
+    """K-패스 2024-05-01 = C1 첫 처리월(2024-02)로부터 3개월."""
+    ax.axvline(3, color=MUTED, lw=0.8, ls=(0, (2, 2)), zorder=1)
+    ax.text(3.4, 0.90, "K-패스", transform=ax.get_xaxis_transform(), fontsize=7.5, color=INK2)
 
+
+FOOTNOTE = ("점 = CS-DiD 추정치, 세로선 = 95% 신뢰구간(역 단위 부트스트랩 999회). "
+            "음영 = 처리 직전 1년(비교 기준). 적용 전 점이 0에서 벗어나면 평행추세 위반.")
+
+
+def save(fig, name: str) -> None:
+    OUT_FIGURES.mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUT_FIGURES / name, dpi=200, facecolor=SURFACE)
+    print(f"저장: {OUT_FIGURES / name}")
+
+
+def main_figure() -> None:
+    month = cohort_events(did.aprime("Aprime_month_2022", freq="month", start="2022-01-01"), width=1)
+    week = cohort_events(did.aprime("Aprime_week"), width=4)
+    ev = pd.concat([month[month.cohort == "C1"], week[week.cohort == "C5"]], ignore_index=True)
+    ev.to_csv(OUT_TABLES / "event_study_main.csv", index=False, encoding="utf-8-sig")
+    fig, axes = plt.subplots(1, 2, figsize=(10, 3.6), facecolor=SURFACE)
+    draw(axes[0], ev[ev.cohort == "C1"], "C1 서울(업무·관광형 제외, 역 유형 층화) — 월", "month")
+    mark_kpass(axes[0])
+    draw(axes[1], ev[ev.cohort == "C5"], "C5 성남 — 주(4주 묶음)", "week")
+    axes[0].set_ylabel("처리 - 대조 (%)", fontsize=8, color=INK2)
+    fig.suptitle("기후동행카드 적용 전후 승차 변화: 전년 동기 대비 log 승차, 처리 역 - 통근권 대조 역",
+                 x=0.01, ha="left", fontsize=11.5, color=INK)
+    fig.text(0.01, 0.005, FOOTNOTE, fontsize=7.5, color=MUTED)
+    fig.tight_layout(rect=(0, 0.05, 1, 0.92))
+    save(fig, "event_study_main.png")
+
+
+def diagnostic_figure() -> None:
+    month = cohort_events(did.Spec("uncond_month_2022", freq="month", start="2022-01-01"), width=1)
+    week = cohort_events(did.Spec("uncond_week"), width=4)
+    ev = pd.concat([month[month.cohort == "C1"], week[week.cohort != "C1"]], ignore_index=True)
+    ev.to_csv(OUT_TABLES / "event_study_by_cohort.csv", index=False, encoding="utf-8-sig")
     fig, axes = plt.subplots(2, 2, figsize=(10, 6.4), facecolor=SURFACE)
     for ax, (name, (title, freq)) in zip(axes.flat, PANELS.items()):
         draw(ax, ev[ev.cohort == name], title, freq)
-        if name == "C1":  # K-패스 2024-05-01 = C1 첫 처리월(2024-02)로부터 3개월
-            ax.axvline(3, color=MUTED, lw=0.8, ls=(0, (2, 2)), zorder=1)
-            ax.text(3.4, 0.90, "K-패스", transform=ax.get_xaxis_transform(), fontsize=7.5, color=INK2)
+        if name == "C1":
+            mark_kpass(ax)
     axes[0, 0].set_ylabel("처리 - 대조 (%)", fontsize=8, color=INK2)
     axes[1, 0].set_ylabel("처리 - 대조 (%)", fontsize=8, color=INK2)
-    fig.suptitle("사전추세 진단: 전년 동기 대비 log 승차, 처리 역 - 통근권 대조 역",
+    fig.suptitle("사전추세 진단(조건 없는 원 사양): 전년 동기 대비 log 승차, 처리 역 - 통근권 대조 역",
                  x=0.01, ha="left", fontsize=11.5, color=INK)
-    fig.text(0.01, 0.005, "점 = CS-DiD 추정치, 세로선 = 95% 신뢰구간(역 단위 부트스트랩 999회). "
-             "음영 = 처리 직전 1년(비교 기준). 적용 전 점이 0에서 벗어나면 평행추세 위반.",
-             fontsize=7.5, color=MUTED)
+    fig.text(0.01, 0.005, FOOTNOTE, fontsize=7.5, color=MUTED)
     fig.tight_layout(rect=(0, 0.03, 1, 0.95))
-    OUT_FIGURES.mkdir(parents=True, exist_ok=True)
-    out = OUT_FIGURES / "event_study_by_cohort.png"
-    fig.savefig(out, dpi=200, facecolor=SURFACE)
-    print(f"저장: {out}")
+    save(fig, "event_study_by_cohort.png")
+
+
+def main() -> None:
+    plt.rcParams.update({"font.family": "NanumGothic", "axes.unicode_minus": False})
+    OUT_TABLES.mkdir(parents=True, exist_ok=True)
+    main_figure()
+    diagnostic_figure()
 
 
 if __name__ == "__main__":

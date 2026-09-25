@@ -17,11 +17,11 @@
   mixed_cohort                복합역 안에서 노선별 처리 시점이 다름
   alight_only                 출시부터 하차만 허용된 예외 구간(부분 처리)
   data_artifact               해당 노선이 서지 않는 역에 찍힌 잔여 집계(월 0~10명)
-  tiny                        복합역 월 승차 중앙값 < 3,000명
+  tiny                        복합역 2023년(사전기간) 월 승차 중앙값 < 3,000명
   outside_capital_region      충남·강원 역
-  leisure                     행락형 대조역 — 주 대조군에서만 빼고 '전체 대조군' 강건성에는 넣는다.
+  leisure                     행락형 역 — 주 추정에서 뺀다(NT 역은 "전체 대조군" 강건성에는 넣는다).
                               2022-05~12(거리두기 해제 뒤, 추정 기간 밖) 일평균 승차 log의 최대−최소가
-                              C1 주 표본 역 분포의 95백분위를 넘는 NT 역
+                              C1 주 표본 역 분포의 95백분위를 넘는 서울 밖 역(NT·C4~C6)
   not_in_data                 서울 데이터셋 미포함 노선·역
   no_pre_period               처리일과 개통일이 같음
 """
@@ -193,9 +193,10 @@ def load_universe(raw: pd.DataFrame) -> pd.DataFrame:
     df = raw[raw.USE_MM.between(ANALYSIS_START, ANALYSIS_END)]
     out = df.groupby(["line", "station"], sort=False).agg(
         station_raw=("STTN", lambda s: "|".join(sorted(set(s)))),
-        first_month=("USE_MM", "min"), last_month=("USE_MM", "max"),
-        on_median_month=("on", "median"))
-    return out.reset_index()
+        first_month=("USE_MM", "min"), last_month=("USE_MM", "max"))
+    # 규모 기준(tiny, 개찰구 공용 판정)은 사전기간(2023)만 쓴다 — 사후 승차로 표본을 고르지 않기 위해
+    pre = df[df.USE_MM.str.startswith("2023")].groupby(["line", "station"]).on.median().rename("on_median_2023")
+    return out.join(pre).reset_index()
 
 
 def season_amplitude(raw: pd.DataFrame, rows: pd.DataFrame) -> pd.Series:
@@ -211,10 +212,12 @@ def season_amplitude(raw: pd.DataFrame, rows: pd.DataFrame) -> pd.Series:
 
 
 def add_leisure(rows: pd.DataFrame) -> None:
-    """C1 주 표본의 계절 진폭 95백분위를 넘는 NT 역에 leisure 코드를 붙인다."""
+    """C1 주 표본의 계절 진폭 95백분위를 넘는 서울 밖 역(NT와 후발 코호트)에 leisure 코드를 붙인다.
+    후발 코호트 처리 역도 같은 기준을 쓴다 — 행락형을 뺀 주 대조군에는 이런 역과 비교할 대조가 없다(예: 대공원).
+    C1은 기준선을 정의하는 집단이라 적용하지 않는다."""
     main_c1 = rows[(rows.cohort == "C1") & (rows.exclude_reason == "")].drop_duplicates("complex")
     threshold = main_c1.season_amp.quantile(LEISURE_QUANTILE)
-    hit = (rows.cohort == "NT") & (rows.season_amp > threshold)
+    hit = rows.cohort.isin(["NT", "C4", "C5", "C6"]) & (rows.season_amp > threshold)
     rows.loc[hit, "exclude_reason"] = [";".join(filter(None, [r, "leisure"])) for r in rows.loc[hit, "exclude_reason"]]
     print(f"행락형 기준선(C1 계절 진폭 {LEISURE_QUANTILE:.0%} 분위): {threshold:.3f} → NT {hit.sum()}행")
 
@@ -236,7 +239,7 @@ def assign(rows: pd.DataFrame) -> pd.DataFrame:
     rows["artifact"] = [(ln, s) in ARTIFACT_ROWS for ln, s in zip(rows.line, rows.station)]
 
     real = rows[~rows.artifact]
-    cx = real.groupby("complex").agg(n_cohorts=("cohort", "nunique"), on_total=("on_median_month", "sum"),
+    cx = real.groupby("complex").agg(n_cohorts=("cohort", "nunique"), on_total=("on_median_2023", "sum"),
                                      n_lines=("line", "size"), sido=("sido", "first"))
     c1_out = set(real.loc[(real.cohort == "C1") & (real.sido != "서울"), "complex"])
 
@@ -257,7 +260,7 @@ def assign(rows: pd.DataFrame) -> pd.DataFrame:
     def note(r) -> str:
         out = [NOTES[r.complex]] if r.complex in NOTES else []
         if (not r.artifact and r.complex in cx.index and cx.at[r.complex, "n_lines"] > 1
-                and r.on_median_month < 0.01 * cx.at[r.complex, "on_total"]):
+                and r.on_median_2023 < 0.01 * cx.at[r.complex, "on_total"]):
             out.append("개찰구 공용 — 노선별 값 무의미, 복합역 합산만 사용")
         if r.artifact:
             out.append("해당 노선 미정차 역의 잔여 집계")
@@ -292,7 +295,7 @@ def main() -> None:
     rows["treat_date"] = rows.cohort.map(dates).fillna("")
     rows["season_amp"] = rows.season_amp.round(3)
     cols = ["station", "line", "cohort", "treat_date", "exclude_reason", "complex", "sido", "sigungu",
-            "note", "in_data", "station_raw", "first_month", "last_month", "on_median_month", "season_amp"]
+            "note", "in_data", "station_raw", "first_month", "last_month", "on_median_2023", "season_amp"]
     out = rows[cols].fillna("")
     out.to_csv(DATA_REFERENCE / "cohort_map.csv", index=False, encoding="utf-8-sig")
 
