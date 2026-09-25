@@ -27,18 +27,24 @@ staggered DiD(Callaway & Sant'Anna 2021)를 씁니다.
 
 ## 재현
 
+환경은 [uv](https://docs.astral.sh/uv/)로 고정합니다(Python 3.12, 직접 의존성은 `pyproject.toml`, 전체는 `uv.lock`).
+pip를 쓰려면 `pip install -r requirements.txt`(uv.lock에서 내보낸 고정 목록)도 됩니다.
+
 ```bash
-pip install -r requirements.txt
+uv sync
 cp .env.example .env   # SEOUL_API_KEY 입력
-python src/01_fetch_ridership.py probe                          # 제공 기간·노선 점검
-python src/01_fetch_ridership.py hourly --start 202201 --end 202608
-python src/01_fetch_ridership.py files --start 202301 --end 202608  # 일별 CSV(데이터셋 파일)
-python src/01_fetch_ridership.py daily --start 20260901 --end 20260921
-python src/03_cohort_map.py                                     # data/reference/cohort_map.csv
-python src/02_build_panel.py                                    # 역 × 주·월 패널
-python src/04_did_cs.py                                         # CS-DiD
-python src/05_event_study.py                                    # event-study 그림
+uv run python src/01_fetch_ridership.py probe                          # 제공 기간·노선 점검
+uv run python src/01_fetch_ridership.py hourly --start 201901 --end 201912
+uv run python src/01_fetch_ridership.py hourly --start 202201 --end 202608
+uv run python src/01_fetch_ridership.py files --start 202301 --end 202608  # 일별 CSV(데이터셋 파일)
+uv run python src/01_fetch_ridership.py daily --start 20260901 --end 20260921
+uv run python src/03_cohort_map.py                                     # data/reference/cohort_map.csv
+uv run python src/02_build_panel.py                                    # 역 × 주·월 패널
+uv run python src/04_did_cs.py                                         # CS-DiD
+uv run python src/05_event_study.py                                    # event-study 그림
 ```
+
+작업 폴더가 OneDrive 같은 동기화 폴더 안이면 `UV_PROJECT_ENVIRONMENT`로 환경을 폴더 밖에 두세요.
 
 일별 자료는 API가 최근 약 7개월만 보관하므로 과거분은 데이터셋 파일로 받습니다.
 `06`~`09` 스크립트는 작업 중입니다.

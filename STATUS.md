@@ -136,7 +136,7 @@ C1 성장 상위 역: 명동 +36.7%, 대모산입구·개포동·구룡 +18~23%(
 | 항목 | 값 |
 |---|---|
 | OS | Windows 11 Home 10.0.26200, 64-bit (PowerShell 5.1 + Git Bash) |
-| Python | 3.12.7 (Anaconda base, `C:\Users\luis2\anaconda3\python.exe`). `python3`은 Windows Store 스텁이라 쓰지 않는다 |
+| Python | **2026-09-25부터 uv 프로젝트 venv만 사용:** Python 3.12.13(uv 관리형), 위치 `C:\Users\luis2\.venvs\ai-sub`(OneDrive 밖). numpy 2.5.3 · pandas 3.0.6 · scipy 1.18.1 · statsmodels 0.15.0 · matplotlib 3.11.2 · scikit-learn 1.9.1 고정(`pyproject.toml`, `uv.lock`). venv로 전체 파이프라인을 다시 돌려 커밋된 결과가 재현됨을 확인(부동소수점 16자리 이하 차이뿐). Anaconda base(3.12.7)는 더 쓰지 않는다 |
 | 패키지 매니저 | conda 24.11.3, pip, uv 0.11.0 (uv가 Python 3.11·3.14도 관리 중) |
 | base 설치됨 | pandas 3.0.2, numpy 2.0.2, pyarrow 24.0.0, requests 2.34.1, python-dotenv, statsmodels 0.14.2, scikit-learn 1.8.0, matplotlib 3.10.9, shapely 2.1.2 |
 | 미설치 | differences, csdid, drdid, pyfixest, linearmodels, econml, doubleml, geopandas |

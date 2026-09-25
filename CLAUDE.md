@@ -119,6 +119,7 @@
 ├── STATUS.md              # 진행·결정·질문 로그 (세션마다 갱신)
 ├── README.md              # 공개용 (GitHub 링크로 제출)
 ├── .env                   # API 키 (커밋 금지), 형식은 .env.example
+├── pyproject.toml, uv.lock, .python-version, requirements.txt   # 환경 고정 (uv)
 ├── data/
 │   ├── raw/               # 원본 그대로, 수정 금지, git 제외
 │   ├── processed/         # 파생 데이터 (parquet), git 제외
@@ -148,7 +149,8 @@
 - **통계 주장 순서:** 사전 추세 검정 → 평균 효과 → 이질성 → 환산. 사전 추세가 깨지면 그 사실을 먼저 STATUS.md에 올리고 설계 조정을 제안한다.
 - **확인 안 된 사실은 가정으로 표기.** 특히 데이터 커버리지, 적용 역 목록, 배출계수 출처. 블로그·위키 서술은 공식 출처로 검증 전까지 채택하지 않는다.
 - **언어:** 문서·주석·STATUS.md는 한국어, 변수명·함수명은 영어.
-- **환경:** 세션 첫 작업으로 OS, Python 버전, 패키지 매니저, R 설치 여부를 확인해 STATUS.md에 기록. 경로에 한글·공백이 있을 수 있으니 항상 따옴표 처리. 한글 출력은 `PYTHONIOENCODING=utf-8`, `python3`(Windows Store 스텁) 대신 Anaconda `python`.
+- **환경:** 세션 첫 작업으로 OS, Python 버전, 패키지 매니저, R 설치 여부를 확인해 STATUS.md에 기록. 경로에 한글·공백이 있을 수 있으니 항상 따옴표 처리. 한글 출력은 `PYTHONIOENCODING=utf-8`.
+- **실행 환경은 uv 프로젝트 venv만 쓴다(Anaconda base 금지).** venv는 OneDrive 밖 `C:\Users\luis2\.venvs\ai-sub`(환경변수 `UV_PROJECT_ENVIRONMENT`로 지정). 실행은 `C:/Users/luis2/.venvs/ai-sub/Scripts/python.exe src/...`. 버전은 `pyproject.toml`(직접 의존성 `==` 고정) + `uv.lock`, pip용 `requirements.txt`는 `uv export`로 생성. 의존성을 바꾸면 lock·export를 함께 갱신해 커밋한다.
 - **분량 의식:** 보고서 본문 5장. 그림은 ① 타임라인+코호트 지도 ② event-study ③ 이질성·경계 흡수 ④ 탄소 범위, 4개가 상한. 분석이 늘어나면 부록(GitHub)으로 보낸다.
 - **큰 방향 변경**(대조군 정의, 결과변수, 모델 교체)은 실행 전에 `결정 필요`로 올린다. 작은 구현 선택은 알아서 하고 `결정됨`에 남긴다.
 
