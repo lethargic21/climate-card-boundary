@@ -27,10 +27,10 @@ INK, INK2, MUTED = "#0b0b0b", "#52514e", "#898781"
 GRID, BASELINE, SURFACE, SHADE = "#e1e0d9", "#c3c2b7", "#fcfcfb", "#f0efec"
 SERIES = "#2a78d6"
 PANELS = {
-    "C1": ("C1 서울 — 월, 2022 사전 포함", "month"),
-    "C4": ("C4 고양·과천 — 주(4주 묶음)", "week"),
-    "C5": ("C5 성남 — 주(4주 묶음)", "week"),
-    "C6": ("C6 하남 — 주(4주 묶음)", "week"),
+    "C1": ("C1 서울 - 월, 2022 사전 포함", "month"),
+    "C4": ("C4 고양·과천 - 주(4주 묶음)", "week"),
+    "C5": ("C5 성남 - 주(4주 묶음)", "week"),
+    "C6": ("C6 하남 - 주(4주 묶음)", "week"),
 }
 
 
@@ -92,9 +92,9 @@ def main_figure() -> None:
     ev = pd.concat([month[month.cohort == "C1"], week[week.cohort == "C5"]], ignore_index=True)
     ev.to_csv(OUT_TABLES / "event_study_main.csv", index=False, encoding="utf-8-sig")
     fig, axes = plt.subplots(1, 2, figsize=(10, 3.6), facecolor=SURFACE)
-    draw(axes[0], ev[ev.cohort == "C1"], "C1 서울(업무·관광형 제외, 역 유형 층화) — 월", "month")
+    draw(axes[0], ev[ev.cohort == "C1"], "C1 서울(업무·관광형 제외, 역 유형 층화) - 월", "month")
     mark_kpass(axes[0])
-    draw(axes[1], ev[ev.cohort == "C5"], "C5 성남 — 주(4주 묶음)", "week")
+    draw(axes[1], ev[ev.cohort == "C5"], "C5 성남 - 주(4주 묶음)", "week")
     axes[0].set_ylabel("처리 - 대조 (%)", fontsize=8, color=INK2)
     fig.suptitle("기후동행카드 적용 전후 승차 변화: 전년 동기 대비 log 승차, 처리 역 - 통근권 대조 역",
                  x=0.01, ha="left", fontsize=11.5, color=INK)

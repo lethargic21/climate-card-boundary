@@ -65,7 +65,7 @@ def save(fig, name: str) -> None:
 
 # --------------------------------------------------------------------------- 그림 1
 
-LABEL_OFFSETS = {  # 1차 링 역 이름 위치(점 단위 오프셋, 정렬) — 가까운 역끼리 겹치지 않게
+LABEL_OFFSETS = {  # 1차 링 역 이름 위치(점 단위 오프셋, 정렬) - 가까운 역끼리 겹치지 않게
     "회룡": (5, 0, "left"), "망월사": (-5, 0, "right"), "석수": (4, 1, "left"), "관악": (4, -5, "left"),
     "광명": (-4, -6, "right"), "역곡": (1, 4, "left"), "소사": (-4, -4, "right"), "검암": (0, 4, "center"),
 }
@@ -76,7 +76,7 @@ def fig1() -> None:
     gs = fig.add_gridspec(1, 2, width_ratios=[1.55, 1])
     ax_t, ax_m = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
 
-    # 타임라인 — (라벨, 날짜, 데이터 포함, 위(+1)/아래(-1))
+    # 타임라인 - (라벨, 날짜, 데이터 포함, 위(+1)/아래(-1))
     style(ax_t, grid_axis="x")
     rows = {"적용 확대": 2, "카드 제도": 1, "교란 사건": 0}
     cohorts = [("C1 서울", "2024-01-27", True, 1), ("C2 김포*", "2024-03-30", False, -1),
@@ -191,7 +191,7 @@ def fig2() -> None:
 # --------------------------------------------------------------------------- 그림 3
 
 def dot_rows(ax, rows, text) -> None:
-    """rows: [(라벨, 추정, SE, 색)] — 가로 점·95% 신뢰구간."""
+    """rows: [(라벨, 추정, SE, 색)] - 가로 점·95% 신뢰구간."""
     style(ax, grid_axis="x")
     for i, (lab, est, se, color) in enumerate(rows):
         y = len(rows) - 1 - i
@@ -280,7 +280,7 @@ def fig4() -> None:
     ax.set_yticks([0] + list(range(len(shares), 0, -1)),
                   ["경계 이탈분의 25~100%가\n승용차로 갔다면(역효과)"] + [lab for _, lab in shares],
                   fontsize=FS, color=INK2)
-    ax.set_xlabel("연간 CO2 변화 (t, 로그 눈금) — 파랑: 절감, 주황: 증가 가능", fontsize=FS, color=INK2, labelpad=2)
+    ax.set_xlabel("연간 CO2 변화 (t, 로그 눈금) - 파랑: 절감, 주황: 증가 가능", fontsize=FS, color=INK2, labelpad=2)
     save(fig, "fig4_carbon.png")
 
 

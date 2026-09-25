@@ -1,14 +1,14 @@
 """처리군 내부 이질성(서사 2)과 경계 흡수(서사 3). 추정은 04_did_cs.py의 CS-DiD를 그대로 쓴다.
 
-서사 2 — 무제한 정기권이 늘린 통행은 어느 시간·요일에 있나 (주 사양 A′ 조건):
+서사 2 - 무제한 정기권이 늘린 통행은 어느 시간·요일에 있나 (주 사양 A′ 조건):
   평일/휴일  주 패널: 공휴일 아닌 월~금 일평균 vs 토·일·공휴일 일평균 승차
   피크/비피크  월 패널: 07~09시·18~20시 vs 나머지 시간 일평균 승차(2022 포함 → C1 사전추세 검정 가능)
   두 결과는 같은 역·같은 부트스트랩 ξ로 추정하므로 차이(휴일 − 평일, 비피크 − 피크)의 신뢰구간도 낸다.
   C1의 평일/휴일 사전추세는 2022 일별 자료가 있어야 검정된다(주 단위 사전 칸이 2023-01 두 주뿐).
-서사 3 — 경계 흡수: 주 추정에서 뺀 경계역을 C1 시점(2024-01-27)부터 통근권 대조와 비교한다(전년 동기 대비).
+서사 3 - 경계 흡수: 주 추정에서 뺀 경계역을 C1 시점(2024-01-27)부터 통근권 대조와 비교한다(전년 동기 대비).
   안쪽(서울) 경계역의 추가 증가 = 흡수, 바깥 역의 감소 = 유출. 바깥 이웃이 나중에 적용된 경계는
   적용 전·후 구간을 나눠 흡수가 풀렸는지(되돌아왔는지) 본다. 확대로 새로 생긴 경계(C4·C5 바깥)도 같은 방식.
-역 유형(AI 요소) — 2023(사전기간) 승차 시간대 구성 6구간 + 휴일/평일 비로 k-means(k는 4~6 중 실루엣 최대).
+역 유형(AI 요소) - 2023(사전기간) 승차 시간대 구성 6구간 + 휴일/평일 비로 k-means(k는 4~6 중 실루엣 최대).
   유형마다 같은 유형의 통근권 대조와만 비교한 C1 ATT를 내고(대조 10곳 미만 유형은 추정 안 함),
   군집을 층으로 쓴 A′(오전 비중 사분위 대신)을 강건성으로 낸다.
 실행: python src/06_heterogeneity.py [types] [tod] [boundary] [ring]  (인자 없으면 전부)
@@ -56,7 +56,7 @@ BOUNDARY_GROUPS = {
         C1_DATE, None, ["망월사", "회룡", "석수", "관악", "광명", "역곡", "소사", "계양", "검암"]),
     "  └ 위에서 계양 제외 (사전추세 위반·검단연장 교란)": (
         C1_DATE, None, ["망월사", "회룡", "석수", "관악", "광명", "역곡", "소사", "검암"]),
-    # 거리 기울기: 바깥 1~2역 다음의 두 역(주 대조군에 들어 있음) — 흡수가 있으면 약하게라도 줄어야 한다
+    # 거리 기울기: 바깥 1~2역 다음의 두 역(주 대조군에 들어 있음) - 흡수가 있으면 약하게라도 줄어야 한다
     "바깥 2차 링 (의정부·가능·퇴계원·사릉·덕소·도심·안양·명학·부천·중동·청라국제도시)": (
         C1_DATE, None, ["의정부", "가능", "퇴계원", "사릉", "덕소", "도심", "안양", "명학", "부천", "중동",
                         "청라국제도시"]),
@@ -174,7 +174,7 @@ def boundary() -> tuple[pd.DataFrame, pd.DataFrame]:
                 est, se, _ = agg.estimate(mask)
                 rows.append({"group": name, "freq": freq, "window": wname, "n_stations": n,
                              "est": est, "se": se if n > 1 else np.nan, "n_cells": int(mask.sum())})
-        # 역별 점추정(주 자료, SE 없음 — 역 1곳은 부트스트랩 SE가 무효)
+        # 역별 점추정(주 자료, SE 없음 - 역 1곳은 부트스트랩 SE가 무효)
         for s in stations:
             cells, agg, labels, n = boundary_fit([s], start, "week", cache)
             if n == 0:
@@ -206,7 +206,7 @@ POLICY_WINDOWS = [  # 1차 링 이탈 시점 판별용 구간 (시작 포함, �
 ]
 STATION_EVENTS = {  # 역별로 확인한(또는 알려진) 국지 사건
     "계양": "인천1호선 검단연장 개통 2025-06-28(계양 환승, 경향신문 2025-06-18)",
-    "검암": "인천2호선 환승역(기존), 검단 신도시 인접 — 연장선 영향 가능",
+    "검암": "인천2호선 환승역(기존), 검단 신도시 인접 - 연장선 영향 가능",
     "소사": "서해선 환승 개통 2023-07-01(사전기간)",
     "회룡": "의정부경전철 환승역(기존)",
 }
@@ -251,7 +251,7 @@ def ring1_timing(cache: dict) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
         ev["month"] = [(pd.Timestamp("2024-02-01") + pd.DateOffset(months=int(e))).to_period("M") for e in ev.e_start]
         ev["group"] = name
         events[name] = ev
-    # 카드 충전(근사)과 1차 링 월별 이탈의 상관 — 사후 월만
+    # 카드 충전(근사)과 1차 링 월별 이탈의 상관 - 사후 월만
     ev = events["1차 링"].set_index("month")
     cm = card_monthly()
     j = ev.join(cm, how="inner")
@@ -291,7 +291,7 @@ def ring1_stations(cache: dict) -> pd.DataFrame:
 
 
 def ring1_honest(cache: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """1차 링 이탈에 대한 HonestDiD 상대적 크기 제약 — 1차 링 자신의 2022→23 사전 흐름을 벤치마크로."""
+    """1차 링 이탈에 대한 HonestDiD 상대적 크기 제약 - 1차 링 자신의 2022→23 사전 흐름을 벤치마크로."""
     cells, agg, labels, _ = boundary_fit(RING1, C1_DATE, "week", cache)
     G = pd.Series(dtype=float)
     G.attrs["cohort_names"] = {int(cells.g.iloc[0]): "C1"}  # did.honest_rm이 'C1' 코호트를 찾는다
@@ -317,7 +317,7 @@ def ring_alighting(cache: dict) -> pd.DataFrame:
 def nonrecovery(cache: dict) -> pd.DataFrame:
     """확대 뒤 미회복 설명 후보 중 자료로 가를 수 있는 것.
     (가) 공통 추세: 나중에 적용된 바깥 역과 끝내 미적용인 1차 링의 차이가 적용 전후로 달라졌나
-         [(L − N)적용 후 − (L − N)적용 전] — 0이면 확대가 이 역들을 되돌리지 못했고, 경계 공통 추세와 같다
+         [(L − N)적용 후 − (L − N)적용 전] - 0이면 확대가 이 역들을 되돌리지 못했고, 경계 공통 추세와 같다
     (나) 습관 고착: 적용 뒤 월별 격차에 회복 기울기가 있나(월당 %p, 기울기 > 0이면 서서히 회복 중)"""
     rows = []
     for name, (exp_date, stations) in EXPANDED_OUT.items():
@@ -472,7 +472,7 @@ def type_effects(cen: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     for r in cen.itertuples():
         if r.type in thin:
-            rows.append({"type": r.type, "n_C1": r.n_C1, "n_NT": r.n_NT, "note": "대조 역 부족 — 추정 안 함"})
+            rows.append({"type": r.type, "n_C1": r.n_C1, "n_NT": r.n_NT, "note": "대조 역 부족 - 추정 안 함"})
             continue
         add(r.type, did.Spec(f"type_{r.type}", cohorts=("C1",), strata="cluster", stratify=("C1",),
                              drop_treated_strata=tuple(t for t in all_types if t != r.type)), r.n_C1, r.n_NT)
@@ -545,7 +545,7 @@ def _main_ring() -> None:
 
     st = ring1_stations(cache)
     st.to_csv(OUT_TABLES / "ring1_stations.csv", index=False, encoding="utf-8-sig")
-    print(f"\n=== 서사 3 보강 ②: 1차 링 역별·leave-one-out (%) — 플라세보 대조역 {st.attrs['placebo_n']}곳의 "
+    print(f"\n=== 서사 3 보강 ②: 1차 링 역별·leave-one-out (%) - 플라세보 대조역 {st.attrs['placebo_n']}곳의 "
           f"표준편차 {100 * st.attrs['placebo_sd']:.2f}%p ===")
     num = st.columns.difference(["station", "event", "placebo_rank_p"])
     print(st.assign(**{c: (100 * st[c]).round(2) for c in num}).to_string(index=False))

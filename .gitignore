@@ -1,12 +1,12 @@
-# 비밀값 — 절대 커밋 금지
+# 비밀값 - 절대 커밋 금지
 .env
 .env.*
 !.env.example
 
-# 원본 데이터 — 수정 금지, 재현은 src/01_fetch_ridership.py로
+# 원본 데이터 - 수정 금지, 재현은 src/01_fetch_ridership.py로
 data/raw/
 
-# 파생 데이터(data/processed, 약 3MB)는 재현 편의를 위해 포함한다 — 다시 만들려면 03 → 02 → 06 types
+# 파생 데이터(data/processed, 약 3MB)는 재현 편의를 위해 포함한다 - 다시 만들려면 03 → 02 → 06 types
 
 # Python
 __pycache__/

@@ -79,7 +79,7 @@ def probe(key: str) -> None:
     latest_day = next(today - dt.timedelta(k) for k in range(15) if _has_daily(today - dt.timedelta(k), key))
     lo, hi = latest_day - dt.timedelta(800), latest_day  # lo: 없음, hi: 있음
     if _has_daily(lo, key):
-        raise RuntimeError("일별 API가 800일 이상 보관 — 탐색 범위를 넓힐 것")
+        raise RuntimeError("일별 API가 800일 이상 보관 - 탐색 범위를 넓힐 것")
     while (hi - lo).days > 1:
         mid = lo + (hi - lo) / 2
         lo, hi = (lo, mid) if _has_daily(mid, key) else (mid, hi)

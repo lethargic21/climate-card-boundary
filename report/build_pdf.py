@@ -110,7 +110,7 @@ def main() -> None:
     tmp_html.unlink()
     tmp_pdf.unlink()
     flag = "OK" if body_pages <= BODY_PAGE_LIMIT else f"초과(규정 {BODY_PAGE_LIMIT}장)"
-    print(f"저장: {pdf_path} — 전체 {total}쪽, 본문 {body_pages}쪽 {flag}")
+    print(f"저장: {pdf_path} - 전체 {total}쪽, 본문 {body_pages}쪽 {flag}")
 
 
 if __name__ == "__main__":

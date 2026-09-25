@@ -1,14 +1,14 @@
-"""Callaway & Sant'Anna(2021) staggered DiD — 공변량 없음, 물리적 역 단위.
+"""Callaway & Sant'Anna(2021) staggered DiD - 공변량 없음, 물리적 역 단위.
 
 ATT(g,t) = E[Y_t − Y_b | G=g] − E[Y_t − Y_b | C]
-- Y: log 승차(주 합계, 평일·휴일 일평균) 또는 log 월 일평균 승차(전체·피크·비피크) — Spec.outcome
+- Y: log 승차(주 합계, 평일·휴일 일평균) 또는 log 월 일평균 승차(전체·피크·비피크) - Spec.outcome
 - C: never-treated(주), 선택 시 + not-yet-treated(G > max(t, b))
 - 기준기간 b
     universal  b = g − 1 (처리 직전 기간)
     seasonal   b = 처리 직전 한 주기(52주/12개월) 안의 같은 주차·월 → 전년 동기 대비(역별 계절성 제거).
                처리 직전 한 주기 안의 t는 b = t라 정의상 0이다.
 - 층화: stratify에 든 코호트는 역 유형 층 안에서만 처리·대조를 비교하고 처리 역 수로 가중해 합친다
-  (이산 공변량을 포화시킨 CS outcome regression과 같다) — 조건부 평행추세.
+  (이산 공변량을 포화시킨 CS outcome regression과 같다) - 조건부 평행추세.
 추론: 역 단위 multiplier bootstrap(영향함수, Rademacher, B=999). 역이 곧 클러스터다.
 설·추석 연휴가 낀 주는 결측으로 둔다.
 
@@ -63,7 +63,7 @@ class Spec:
     drop_months: tuple = ()              # 월 자료에서 뺄 달(설·추석이 해마다 다른 달에 드는 1·2·9·10월 등)
 
 
-HOLIDAY_MONTHS = (1, 2, 9, 10)  # 설(1~2월)·추석(9~10월)이 해마다 다른 달에 든다 — 월 자료 전년 동기 비교를 어긋나게 함
+HOLIDAY_MONTHS = (1, 2, 9, 10)  # 설(1~2월)·추석(9~10월)이 해마다 다른 달에 든다 - 월 자료 전년 동기 비교를 어긋나게 함
 
 
 def aprime(name: str, **kw) -> Spec:
@@ -99,7 +99,7 @@ def station_strata(kind: str, units: pd.DataFrame) -> pd.Series:
     if kind == "cluster":  # 06_heterogeneity.py의 역 유형 군집(2023 프로필 k-means)
         path = DATA_PROCESSED / "station_types_2023.parquet"
         if not path.exists():
-            raise FileNotFoundError(f"{path.name} 없음 — 06_heterogeneity.py를 먼저 실행")
+            raise FileNotFoundError(f"{path.name} 없음 - 06_heterogeneity.py를 먼저 실행")
         return pd.read_parquet(path).set_index("complex")["type"]
     prof = pd.read_parquet(DATA_PROCESSED / "station_profile_2023.parquet").set_index("complex")
     if kind != "am_quartile":
@@ -360,7 +360,7 @@ def covid_baseline() -> pd.DataFrame:
 
 
 def honest_rm(res: dict, benchmarks: dict[str, float | str]) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """C1에 대한 Δ^RM 민감도. benchmarks: 이름 → 고정 D(연간, float) 또는 날짜 문자열 —
+    """C1에 대한 Δ^RM 민감도. benchmarks: 이름 → 고정 D(연간, float) 또는 날짜 문자열 -
     그 날짜 이후의 사전 칸(k=−1, 기준 연도 한 해 전) 평균의 |값|을 부트스트랩과 함께 D로 쓴다.
     반환: (M 격자 표, 붕괴점 표)."""
     agg, G = res["agg"], res["G"]
@@ -405,7 +405,7 @@ def honest_rm(res: dict, benchmarks: dict[str, float | str]) -> tuple[pd.DataFra
 
 SPECS = [
     aprime("Aprime_week"),                                            # 주 사양
-    aprime("Aprime_month_2022", freq="month", start="2022-01-01"),    # 2022 포함 — C1 사전추세·HonestDiD
+    aprime("Aprime_month_2022", freq="month", start="2022-01-01"),    # 2022 포함 - C1 사전추세·HonestDiD
     aprime("Aprime_month_2022_noholiday", freq="month", start="2022-01-01",
            drop_months=HOLIDAY_MONTHS),                               # 설·추석 달 제외(해마다 달이 바뀜)
     aprime("Aprime_week_fullctrl", controls="full"),                  # 전체 대조군(행락형 포함)

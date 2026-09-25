@@ -1,4 +1,4 @@
-"""버스 대체 검정 — 경계 바깥 역에서 빠진 지하철 승차가 서울 면허 버스(기후동행카드 적용)로 옮겨 갔나.
+"""버스 대체 검정 - 경계 바깥 역에서 빠진 지하철 승차가 서울 면허 버스(기후동행카드 적용)로 옮겨 갔나.
 
 입력
 - data/raw/seoul_bus_hourly_api/CardBusTimeNew_YYYYMM.parquet  서울 면허 버스 노선×정류장 월 승차(2023-01~2025-12)
@@ -6,12 +6,12 @@
 - data/processed/panel_week.parquet(지하철), data/reference/cohort_map.csv
 역 ↔ 정류장 연결(반경 500m)
 - 서울 정류장(좌표 있음): 역 좌표에서 500m 이내
-- 서울 밖 정류장(좌표 자료에 없음 — 서울 면허 버스가 서는 경기·인천 정류장): 정류장 이름에 '<역명>역'이
+- 서울 밖 정류장(좌표 자료에 없음 - 서울 면허 버스가 서는 경기·인천 정류장): 정류장 이름에 '<역명>역'이
   든 곳(역 앞 정류장의 대용). 다른 역 이름에 걸리는 오탐은 NAME_FALSE_POSITIVE로 뺀다('신중동역' ≠ 중동역)
 카드 적용 노선만 센다(서울 광역버스는 기후동행카드 미적용이라 뺀다).
 검정
-  (1) 도달: 역별 2023년 서울 버스(카드 적용) 일평균 승차 — 닿는 역 / 안 닿는 역
-  (2) 지하철 이탈을 닿는 역 vs 안 닿는 역으로 비교(같은 ξ로 차이의 SE) — 기제의 직접 검정
+  (1) 도달: 역별 2023년 서울 버스(카드 적용) 일평균 승차 - 닿는 역 / 안 닿는 역
+  (2) 지하철 이탈을 닿는 역 vs 안 닿는 역으로 비교(같은 ξ로 차이의 SE) - 기제의 직접 검정
   (3) 경계 바깥 역 주변 서울 버스 승차가 서울 안쪽 역(A′ C1) 주변보다 더 늘었나(전년 동기 대비)
   (4) 물량 대조: 지하철에서 빠진 승차(명/일) vs 주변 서울 버스에서 늘어난 승차(명/일)
 출력 outputs/tables/bus_reach.csv, bus_subway_by_reach.csv, bus_growth.csv, bus_volume.csv
@@ -145,7 +145,7 @@ def main() -> None:
     print("=== (1) 서울 버스 도달 ===")
     print(reach.round(0).to_string())
 
-    # (2) 지하철 이탈을 닿는 역 vs 안 닿는 역으로 — 계양은 사전추세·검단연장 교란으로 제외
+    # (2) 지하철 이탈을 닿는 역 vs 안 닿는 역으로 - 계양은 사전추세·검단연장 교란으로 제외
     groups = {}
     for gname, members in (("1차 링", het.RING1), ("2차 링", ring2)):
         r = reach.loc[members]
@@ -175,7 +175,7 @@ def main() -> None:
         show[c] = (100 * show[c]).round(2)
     print(show.to_string(index=False))
 
-    # (3) 역 주변 서울 버스 승차: 경계 바깥(닿는 역) vs 서울 안쪽 A′ C1 역 주변 — 전년 동기 대비
+    # (3) 역 주변 서울 버스 승차: 경계 바깥(닿는 역) vs 서울 안쪽 A′ C1 역 주변 - 전년 동기 대비
     reached = [s for s in het.RING1 + ring2 if reach.at[s, "닿음"]]
     growth_rows = []
     for gname, members in (("1차 링(닿는 역)", [s for s in het.RING1 if s in reached]),
@@ -200,7 +200,7 @@ def main() -> None:
                                 "est": est, "se": se})
     growth = pd.DataFrame(growth_rows)
     growth.to_csv(OUT_TABLES / "bus_growth.csv", index=False, encoding="utf-8-sig")
-    print("\n=== (3) 역 주변 서울 버스 승차 변화 — 서울 안쪽 A′ 역 주변 대비, 전년 동기 대비 (%) ===")
+    print("\n=== (3) 역 주변 서울 버스 승차 변화 - 서울 안쪽 A′ 역 주변 대비, 전년 동기 대비 (%) ===")
     print(growth.assign(est=(100 * growth.est).round(2), se=(100 * growth.se).round(2)).to_string(index=False))
 
     # (4) 물량 대조: 1차 링 닿는 역

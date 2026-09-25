@@ -9,13 +9,13 @@
 - data/processed/panel_week.parquet   complex × 주(토~금): on, off, on_work/n_work(평일), on_rest/n_rest(휴일),
                                       holiday_week + 코호트 정보
 - data/processed/panel_month.parquet  complex × 월: on, on_peak(07~09시·18~20시), on_offpeak + 코호트 정보
-- data/processed/station_profile_2023.parquet  complex별 2023년(사전기간) 시간대별 승차 비중 — 역 유형 분류용
+- data/processed/station_profile_2023.parquet  complex별 2023년(사전기간) 시간대별 승차 비중 - 역 유형 분류용
 
 규칙
 - 주는 토요일 시작(처리일 6개가 모두 토요일). 7일이 모두 있는 주만 남긴다.
 - 역명 정규화는 common.normalize_station, 복합역·코호트·제외 사유는 cohort_map.csv를 따른다.
 - data_artifact 행은 합산하지 않는다. 월×시간대 원본의 중복 적재 행(2026-03·07)은 제거한다.
-- holiday_week: 설·추석 연휴가 낀 주 — 추정에서 뺀다.
+- holiday_week: 설·추석 연휴가 낀 주 - 추정에서 뺀다.
 - 평일 = 공휴일이 아닌 월~금, 휴일 = 토·일·공휴일(PUBLIC_HOLIDAYS).
 """
 from __future__ import annotations
@@ -27,7 +27,7 @@ import pandas as pd
 from common import DATA_PROCESSED, DATA_RAW, DATA_REFERENCE, normalize_station
 
 BOM = bytes([0xEF, 0xBB, 0xBF])
-# 설·추석 연휴(대체·임시공휴일 포함) — 지식 기반, STATUS.md 가정 참조
+# 설·추석 연휴(대체·임시공휴일 포함) - 지식 기반, STATUS.md 가정 참조
 MAJOR_HOLIDAYS = [
     ("2022-01-31", "2022-02-02"), ("2022-09-09", "2022-09-12"),
     ("2023-01-21", "2023-01-24"), ("2023-09-28", "2023-10-03"),
@@ -35,7 +35,7 @@ MAJOR_HOLIDAYS = [
     ("2025-01-25", "2025-01-30"), ("2025-10-03", "2025-10-09"),
     ("2026-02-14", "2026-02-18"), ("2026-09-24", "2026-09-26"),
 ]
-# 관공서 공휴일(대체·임시공휴일·선거일 포함) — 지식 기반, STATUS.md 가정 참조. 평일/휴일 구분용
+# 관공서 공휴일(대체·임시공휴일·선거일 포함) - 지식 기반, STATUS.md 가정 참조. 평일/휴일 구분용
 PUBLIC_HOLIDAYS = pd.to_datetime([
     "2022-01-01", "2022-01-31", "2022-02-01", "2022-02-02", "2022-03-01", "2022-03-09", "2022-05-05",
     "2022-05-08", "2022-06-01", "2022-06-06", "2022-08-15", "2022-09-09", "2022-09-10", "2022-09-11",
@@ -61,7 +61,7 @@ def read_daily_csv() -> pd.DataFrame:
     for path in sorted((DATA_RAW / "seoul_daily_csv").glob("CARD_SUBWAY_MONTH_*.csv")):
         # 대부분 UTF-8(BOM)·따옴표 형식이지만 2024-02·2025-02는 CP949·따옴표 없음
         enc = "utf-8-sig" if path.read_bytes()[:3] == BOM else "cp949"
-        # 헤더는 6칸, 데이터 행은 끝에 빈 칸이 하나 더 붙어 7칸 — 앞 6칸만 읽는다
+        # 헤더는 6칸, 데이터 행은 끝에 빈 칸이 하나 더 붙어 7칸 - 앞 6칸만 읽는다
         df = pd.read_csv(path, encoding=enc, dtype=str, usecols=range(6))
         df.columns = ["date", "line", "station_raw", "on", "off", "reg"]
         frames.append(df.drop(columns="reg"))
