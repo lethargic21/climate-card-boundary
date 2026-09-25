@@ -5,13 +5,13 @@
 - 보고서 PDF: [`report/사당역9번출구_분석보고서.pdf`](report/사당역9번출구_분석보고서.pdf)
 - 원고: [`report/분석보고서.md`](report/분석보고서.md)
 
-서울시 기후동행카드(2024-01-27~)가 어느 역에서 얼마나 지하철 이용을 늘렸는지 역 단위로 추정합니다. 혜택이 끊기는 행정 경계 바로 바깥에서 무슨 일이 있었는지도 함께 봅니다. 적용 지역이 여러 차례 넓어진 점을 이용해 staggered DiD(Callaway & Sant'Anna 2021)를 씁니다.
+서울시 기후동행카드(2024-01-27부터)가 어느 역에서 얼마나 지하철 이용을 늘렸는지 역 단위로 추정합니다. 혜택이 끊기는 행정 경계 바로 바깥에서 무슨 일이 있었는지도 함께 봅니다. 적용 지역이 여러 차례 넓어진 점을 이용해 staggered DiD(Callaway & Sant'Anna 2021)를 씁니다.
 
 ## 핵심 결과
 
-1. **서울 안:** 비도심 196역의 첫해 승차 효과는 +0.13%(95% CI −1.72~+1.99)로 0과 구분되지 않습니다. 출퇴근 주거지형 역은 0이고, 혼합형 역에서만 +2.1%입니다.
+1. **서울 안:** 비도심 196역의 첫해 승차 효과는 +0.13%(95% CI −1.72–+1.99)로 0과 구분되지 않습니다. 출퇴근 주거지형 역은 0이고, 혼합형 역에서만 +2.1%입니다.
 2. **경계 바깥:** 혜택이 끊기는 경계 바로 바깥 미적용 8역의 승차가 출시 직후부터 4.7%(SE 1.6) 줄었습니다. 역 앞 서울 버스로 옮겨 간 흔적은 없고, 적용이 확대된 뒤에도 회복되지 않았습니다.
-3. **탄소:** 설문 비율 4%를 적용하면 서울 안 절감은 연 128~1,896t입니다. 경계 이탈분의 25~100%가 승용차로 갔다면 배출이 연 867~3,469t 늘 수 있습니다(조건부).
+3. **탄소:** 설문 비율 4%를 적용하면 서울 안 절감은 연 128–1,896t입니다. 경계 이탈분의 25–100%가 승용차로 갔다면 배출이 연 867–3,469t 늘 수 있습니다(조건부).
 
 ## 그림
 
@@ -53,7 +53,7 @@ pip를 쓰려면 `pip install -r requirements.txt`(uv.lock에서 내보낸 고�
 cp .env.example .env   # SEOUL_API_KEY=발급받은 키
 uv run python src/01_fetch_ridership.py probe                              # 제공 기간·노선 점검
 uv run python src/01_fetch_ridership.py files --start 2022 --end 2022      # 2022 일별(연 파일)
-uv run python src/01_fetch_ridership.py files --start 202301 --end 202608  # 2023~ 일별(월 파일)
+uv run python src/01_fetch_ridership.py files --start 202301 --end 202608  # 2023년부터 일별(월 파일)
 uv run python src/01_fetch_ridership.py daily --start 20260901 --end 20260921
 uv run python src/01_fetch_ridership.py hourly --start 201901 --end 201912
 uv run python src/01_fetch_ridership.py hourly --start 202201 --end 202608
@@ -108,6 +108,6 @@ uv run python report/build_pdf.py         # 보고서 PDF(Chrome 또는 Edge 필
 
 ```
 data/raw/        원본(커밋 제외)          data/reference/  규칙·수작업 참조표(출처 포함)
-data/processed/  파생 패널(포함)          src/             01~09 파이프라인
+data/processed/  파생 패널(포함)          src/             01–09 파이프라인
 outputs/         그림·결과표              report/          보고서 원고와 PDF 빌드
 ```
