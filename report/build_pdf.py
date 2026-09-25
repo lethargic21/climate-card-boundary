@@ -1,11 +1,12 @@
-"""보고서 원고(md) → HTML → PDF(A4). Edge(없으면 Chrome) headless로 인쇄한다.
+"""보고서 원고(md) → HTML → PDF(A4). Chrome(없으면 Edge) headless로 인쇄한다.
 
 원고의 `<!-- pagebreak -->`로 표지 / 본문 / 참고문헌을 나눈다. 본문만 따로 한 번 더 인쇄해
 공모전 규정(본문 5장 이내, 표지·참고문헌 제외)을 확인할 수 있게 본문 쪽수를 출력한다.
 '그림 N.'·'표 N.'으로 시작하는 문단은 캡션으로 꾸미고, 바로 앞 그림과 한 덩어리로 묶는다.
+PDF 파일명은 공모전 규칙(팀명_분석보고서.pdf)에 맞춰 표지의 '팀명: …' 줄에서 만든다.
 
-실행: python report/build_pdf.py [원고.md]   (기본: report/분석보고서_초안.md)
-출력: 원고와 같은 이름의 .html, .pdf
+실행: python report/build_pdf.py [원고.md]   (기본: report/분석보고서.md)
+출력: 원고와 같은 이름의 .html(중간물), 팀명_분석보고서.pdf
 """
 from __future__ import annotations
 
@@ -89,13 +90,16 @@ def print_pdf(html_path: Path, pdf_path: Path) -> int:
 
 
 def main() -> None:
-    md_path = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else HERE / "분석보고서_초안.md"
+    md_path = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else HERE / "분석보고서.md"
     parts = md_path.read_text(encoding="utf-8").split("<!-- pagebreak -->")
     if len(parts) != 3:
         raise ValueError("원고는 <!-- pagebreak --> 두 개로 표지·본문·참고문헌을 나눠야 한다")
-    title = md_path.stem
+    team = re.search(r"^팀명:\s*(.+?)\s*$", parts[0], flags=re.M)
+    if team is None or re.search(r'[\[\]<>:"/\\|?*]', team.group(1)):
+        raise ValueError("표지에 파일명으로 쓸 수 있는 '팀명: …' 줄이 필요하다")
+    title = f"{team.group(1)}_분석보고서"
     sections = list(zip(["cover", "body", "back"], parts))
-    html_path, pdf_path = md_path.with_suffix(".html"), md_path.with_suffix(".pdf")
+    html_path, pdf_path = md_path.with_suffix(".html"), md_path.with_name(f"{title}.pdf")
     html_path.write_text(page(sections, title), encoding="utf-8")
     total = print_pdf(html_path, pdf_path)
 
