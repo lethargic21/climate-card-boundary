@@ -1,0 +1,7 @@
+cohort,treat_date,weekday,area,scope,in_seoul_dataset,source,verified
+C1,2024-01-27,토,서울 전역 + 서울 건설 구간의 서울 밖 역,"1~9호선·신림선·우이신설선 전 구간(3호선 지축, 7호선 장암·철산·광명사거리, 8호선 남위례~모란 7역 포함), 공항철도 서울역~김포공항, 경의중앙선·수인분당선·경춘선·1호선(코레일) 서울 구간",대부분,https://mediahub.seoul.go.kr/archives/2010027 ; 8호선 성남 7역 적용일 2024.1.27 표: https://mediahub.seoul.go.kr/archives/2013088,서울 구간·8호선 성남=공식 / 지축·장암·철산·광명사거리=공식 이용범위('3호선 전구간' '7호선 온수~장암')로 추정
+C2,2024-03-30,토,김포시,김포골드라인 전 구간 10역,없음,https://news.seoul.go.kr/traffic/archives/511989,공식
+C3,2024-08-10,토,남양주시·구리시,진접선(별내별가람·오남·진접) + 별내선(같은 날 개통 — 사전기간 없음),없음(암사역사공원만 있음),https://go.seoul.co.kr/news/newsView.php?id=20240808018002 ; https://news.seoul.go.kr/traffic/archives/512719,공식
+C4,2024-11-30,토,고양시·과천시,"3호선 삼송~대화 10역, 경의중앙선 한국항공대~탄현 10역, 서해선 일산~능곡 6역(+김포공항), 4호선 선바위~정부과천청사 5역",서해선 제외 있음,https://news.seoul.go.kr/traffic/archives/513130 ; https://mediahub.seoul.go.kr/archives/2012777,공식
+C5,2025-05-03,토,성남시,"수인분당선 가천대~오리 10역, 경강선 판교·성남·이매 3역",있음,https://news.seoul.go.kr/traffic/archives/514140 ; https://mediahub.seoul.go.kr/archives/2013088,공식
+C6,2025-08-09,토,하남시,"5호선 미사·하남풍산·하남시청·하남검단산 4역(그전에는 하차만 허용)",있음,https://news.seoul.go.kr/traffic/archives/514789 ; https://mediahub.seoul.go.kr/archives/2015277,공식

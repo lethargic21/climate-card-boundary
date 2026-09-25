@@ -1,0 +1,33 @@
+# 비밀값 — 절대 커밋 금지
+.env
+.env.*
+!.env.example
+
+# 원본 데이터 — 수정 금지, 재현은 src/01_fetch_ridership.py로
+data/raw/
+
+# 파생 데이터 — 스크립트로 재생성 (용량 큰 parquet)
+data/processed/*
+!data/processed/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+.pytest_cache/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# OS / 편집기 / OneDrive
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+*.tmp
+~$*

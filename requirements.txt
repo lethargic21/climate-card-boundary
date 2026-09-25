@@ -1,0 +1,12 @@
+# Phase 1 (수집·코호트 맵) — Anaconda base, Python 3.12.7에서 동작 확인
+pandas>=2.2
+numpy>=1.26
+pyarrow>=15
+requests>=2.31
+python-dotenv>=1.0
+
+# Phase 2~ (추정) — OneDrive 밖 별도 환경에 설치 예정. pandas 3.0 호환성 확인 필요
+# differences      # Callaway-Sant'Anna (대안: csdid)
+# pyfixest         # TWFE·Sun-Abraham·did2s 비교
+# scikit-learn     # 이질성 (결정 필요 6에 따라 econml 추가)
+# matplotlib
