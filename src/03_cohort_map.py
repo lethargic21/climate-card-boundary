@@ -33,20 +33,14 @@ import json
 import numpy as np
 import pandas as pd
 
-from common import DATA_RAW, DATA_REFERENCE
+from common import DATA_RAW, DATA_REFERENCE, normalize_station
 
 ANALYSIS_START, ANALYSIS_END = "202301", "202608"
 SEASON_REF = ("202205", "202212")  # 행락형 판정 기준기간
 TINY_MONTHLY_ON = 3000
 LEISURE_QUANTILE = 0.95
 
-# 역명 변경(구명 → 현재명). 주석은 데이터상 새 이름이 처음 나온 월.
-RENAMES = {
-    ("4호선", "당고개"): "불암산",       # 2025-04
-    ("7호선", "뚝섬유원지"): "자양",     # 2024-03
-    ("경의선", "화전"): "한국항공대",    # 2024-01
-    ("경원선", "초성리"): "청산",        # 2023-12 한 달만 초성리
-}
+# 역명 정규화(괄호 부기 제거·개명)는 common.normalize_station
 # 이름이 같은 다른 역 / 이름이 다른 같은 역
 HOMONYMS = {("5호선", "양평"): "양평(5호선)", ("중앙선", "양평"): "양평(중앙선)",
             ("2호선", "신촌"): "신촌(2호선)", ("경의선", "신촌"): "신촌(경의선)"}
@@ -191,8 +185,7 @@ def load_raw() -> pd.DataFrame:
     on_cols = [c for c in df.columns if c.endswith("_GET_ON_NOPE")]
     df["on"] = df[on_cols].apply(pd.to_numeric).sum(axis=1)
     df["line"] = df.SBWY_ROUT_LN_NM
-    base = df.STTN.str.replace(r"\(.*\)$", "", regex=True).str.strip()
-    df["station"] = [RENAMES.get((ln, s), s) for ln, s in zip(df.line, base)]
+    df["station"] = [normalize_station(ln, s) for ln, s in zip(df.line, df.STTN)]
     return df[["line", "station", "STTN", "USE_MM", "on"]]
 
 

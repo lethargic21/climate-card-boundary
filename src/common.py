@@ -6,6 +6,7 @@ API 키는 URL 경로에 들어가므로 예외 메시지에서 반드시 마스
 from __future__ import annotations
 
 import os
+import re
 import time
 from pathlib import Path
 
@@ -21,6 +22,20 @@ OUT_FIGURES = ROOT / "outputs" / "figures"
 
 SEOUL_API_BASE = "http://openapi.seoul.go.kr:8088"
 SEOUL_PAGE_MAX = 1000  # 서울 OpenAPI 1회 최대 행 수
+
+# 역명 변경(구명 → 현재명). 주석은 데이터상 새 이름이 처음 나온 월.
+RENAMES = {
+    ("4호선", "당고개"): "불암산",       # 2025-04
+    ("7호선", "뚝섬유원지"): "자양",     # 2024-03
+    ("경의선", "화전"): "한국항공대",    # 2024-01
+    ("경원선", "초성리"): "청산",        # 2023-12 한 달만 초성리
+}
+
+
+def normalize_station(line: str, raw_name: str) -> str:
+    """괄호 부기를 떼고 개명을 현재명으로 맞춘다. 예: '청량리(서울시립대입구)' → '청량리'."""
+    base = re.sub(r"\(.*\)$", "", raw_name).strip()
+    return RENAMES.get((line, base), base)
 
 
 class SeoulAPIError(RuntimeError):
