@@ -41,6 +41,8 @@ numpy==2.5.3
     #   scikit-learn
     #   scipy
     #   statsmodels
+olefile==0.47
+    # via climate-card-did
 packaging==26.3
     # via
     #   matplotlib

@@ -2,8 +2,8 @@
 
 팀 **사당역9번출구**가 한겨레×숲과나눔 「AI와 함께하는 교통문제 해결을 위한 데이터 분석 공모전」에 제출하는 분석의 코드와 데이터입니다.
 
-- 보고서 PDF: [`report/사당역9번출구_분석보고서.pdf`](report/사당역9번출구_분석보고서.pdf)
-- 원고: [`report/분석보고서.md`](report/분석보고서.md)
+- 보고서 PDF: [`report/사당역9번출구_분석보고서.pdf`](report/사당역9번출구_분석보고서.pdf) (주최측 [붙임2] 분석보고서 양식 레이아웃)
+- 원고: [`report/분석보고서.md`](report/분석보고서.md) (양식의 10개 항목을 `## 항목명` 절로 쓰고, 빌드가 표의 행으로 옮긴다)
 
 서울시 기후동행카드(2024-01-27부터)가 어느 역에서 얼마나 지하철 이용을 늘렸는지 역 단위로 추정합니다. 혜택이 끊기는 행정 경계 바로 바깥에서 무슨 일이 있었는지도 함께 봅니다. 적용 지역이 여러 차례 넓어진 점을 이용해 staggered DiD(Callaway & Sant'Anna 2021)를 씁니다.
 
@@ -76,7 +76,8 @@ uv run python src/06_heterogeneity.py     # 역 유형 군집·유형별 효과,
 uv run python src/07_bus_substitution.py  # 경계 이탈의 서울 버스 대체 검정
 uv run python src/08_carbon.py            # 탄소 범위, 경계 역효과, 서울시 발표 역산
 uv run python src/09_figures.py           # 보고서 그림 4장
-uv run python report/build_pdf.py         # 보고서 PDF(Chrome 또는 Edge 필요)
+uv run python report/build_pdf.py         # 보고서 PDF(Chrome 또는 Edge 필요), 양식 레이아웃
+# (선택) uv run python report/extract_template.py  # 주최측 HWP 양식에서 항목 텍스트·로고 추출(양식 원본은 저장소에 없음)
 ```
 
 - `06_heterogeneity.py`는 인자로 일부만 돌릴 수 있습니다(`types` `tod` `boundary` `ring`).
@@ -109,5 +110,5 @@ uv run python report/build_pdf.py         # 보고서 PDF(Chrome 또는 Edge 필
 ```
 data/raw/        원본(커밋 제외)          data/reference/  규칙·수작업 참조표(출처 포함)
 data/processed/  파생 패널(포함)          src/             01–09 파이프라인
-outputs/         그림·결과표              report/          보고서 원고와 PDF 빌드
+outputs/         그림·결과표              report/          보고서 원고, 양식 로고, PDF 빌드
 ```

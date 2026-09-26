@@ -16,6 +16,7 @@ dependencies = [
     "statsmodels==0.15.0",
     "scikit-learn==1.9.1",
     "markdown==3.10.3",  # report/build_pdf.py (보고서 md → HTML)
+    "olefile==0.47",  # report/extract_template.py (주최측 HWP 양식 읽기)
 ]
 
 [tool.uv]
