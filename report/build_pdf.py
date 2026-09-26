@@ -6,11 +6,11 @@
 - 항목마다 따로 표를 만들고 항목명을 높이 0의 thead에, 아래 테두리를 높이 0의 tfoot에 둔다. Chrome은 쪽이 바뀌면
   thead·tfoot을 되풀이하므로, 행이 쪽 경계에서 끊겨도 쪽 끝이 테두리로 닫히고 다음 쪽 위에 항목명이 다시 보인다.
 - 내용은 문단·그림·표 단위로 표의 행을 나눠 그 사이에서만 쪽이 바뀌게 하고, 그림·표 행은 쪽 안에서 잘리지 않게 한다.
-- PDF 파일명은 공모전 규칙(팀명_분석보고서.pdf)에 따라 '이름/팀명' 항목에서 만든다('이름 / 팀명'이면 '/' 뒤).
+- PDF 파일명은 공모전 규칙(팀명 또는 이름_분석보고서.pdf)에 따라 '이름/팀명' 항목에서 만든다('이름 / 팀명'이면 '/' 뒤).
 - 본문 쪽수는 '분석도구 및 참고문헌' 행을 뺀 판을 한 번 더 인쇄해 센다(양식: 본문 5장 내외, 표지·참고문헌 제외).
 
 실행: python report/build_pdf.py [원고.md]   (기본: report/분석보고서.md)
-출력: 원고와 같은 이름의 .html(중간물), 팀명_분석보고서.pdf
+출력: 원고와 같은 이름의 .html(중간물), 이름_분석보고서.pdf('이름/팀명' 항목 값)
 """
 from __future__ import annotations
 
@@ -186,10 +186,10 @@ def main() -> None:
     md_path = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else HERE / "분석보고서.md"
     items, after = parse(md_path.read_text(encoding="utf-8"))
     names = dict(items)
-    team = names.get("이름/팀명", "").strip().splitlines()[0].split("/")[-1].strip() if names.get("이름/팀명") else ""
-    if not team or re.search(r'[\[\]<>:"/\\|?*]', team):
-        raise ValueError("'이름/팀명' 항목에 파일명으로 쓸 수 있는 팀명이 필요하다")
-    title = f"{team}_분석보고서"
+    entrant = names.get("이름/팀명", "").strip().splitlines()[0].split("/")[-1].strip() if names.get("이름/팀명") else ""
+    if not entrant or re.search(r'[\[\]<>:"/\\|?*]', entrant):
+        raise ValueError("'이름/팀명' 항목에 파일명으로 쓸 수 있는 이름이나 팀명이 필요하다")
+    title = f"{entrant}_분석보고서"
     html_path, pdf_path = md_path.with_suffix(".html"), md_path.with_name(f"{title}.pdf")
     html_path.write_text(page(items, after, title), encoding="utf-8")
     total = print_pdf(html_path, pdf_path)
